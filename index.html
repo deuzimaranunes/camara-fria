@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoramento Câmara Fria</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#f4f7fb;
+}
+
+header{
+    background:#0057b8;
+    color:white;
+    padding:20px;
+    text-align:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+
+header h1{
+    margin-bottom:5px;
+}
+
+.container{
+    width:90%;
+    max-width:1200px;
+    margin:30px auto;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.card{
+    background:white;
+    border-radius:15px;
+    padding:25px;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+.card h3{
+    color:#0057b8;
+    margin-bottom:10px;
+}
+
+.valor{
+    font-size:32px;
+    font-weight:bold;
+}
+
+.normal{
+    color:green;
+}
+
+.alerta{
+    color:red;
+}
+
+.acoes{
+    margin-bottom:20px;
+}
+
+button{
+    background:#ffc107;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+th{
+    background:#0057b8;
+    color:white;
+    padding:15px;
+}
+
+td{
+    padding:12px;
+    text-align:center;
+    border-bottom:1px solid #eee;
+}
+
+footer{
+    text-align:center;
+    padding:20px;
+    color:#666;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Monitoramento da Câmara Fria</h1>
+    <p>Controle de Temperatura em Tempo Real</p>
+</header>
+
+<div class="container">
+
+    <div class="cards">
+
+        <div class="card">
+            <h3>Última Temperatura</h3>
+            <div class="valor" id="ultimaTemp">-- °C</div>
+        </div>
+
+        <div class="card">
+            <h3>Total de Leituras</h3>
+            <div class="valor" id="totalLeituras">0</div>
+        </div>
+
+        <div class="card">
+            <h3>Status</h3>
+            <div class="valor" id="statusCamara">--</div>
+        </div>
+
+    </div>
+
+    <div class="acoes">
+        <button onclick="carregarDados()">Atualizar Dados</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Temperatura (°C)</th>
+                <th>Data/Hora</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaDados">
+        </tbody>
+    </table>
+
+</div>
+
+<footer>
+    Sistema de Monitoramento de Câmara Fria
+</footer>
+
+<script>
+
+const API =
+"https://19ig21u0cj.execute-api.us-east-1.amazonaws.com/prod/temperatura";
+
+async function carregarDados(){
+
+    try{
+
+        const resposta = await fetch(API,{
+            headers:{
+                authorization:"deuzimara"
+            }
+        });
+
+        const dados = await resposta.json();
+
+        const tabela = document.getElementById("tabelaDados");
+        tabela.innerHTML = "";
+
+        document.getElementById("totalLeituras").innerText = dados.length;
+
+        if(dados.length > 0){
+
+            const ultima = dados[dados.length - 1];
+
+            document.getElementById("ultimaTemp").innerText =
+                ultima.temperatura + " °C";
+
+            const status = document.getElementById("statusCamara");
+
+            if(ultima.temperatura <= 8){
+                status.innerText = "NORMAL";
+                status.className = "valor normal";
+            }else{
+                status.innerText = "ALERTA";
+                status.className = "valor alerta";
+            }
+        }
+
+        dados.forEach(item => {
+
+            tabela.innerHTML += `
+                <tr>
+                    <td>${item.id}</td>
+                    <td>${item.temperatura}</td>
+                    <td>${item.data_hora}</td>
+                </tr>
+            `;
+        });
+
+    }catch(erro){
+        alert("Erro ao carregar dados da API");
+        console.error(erro);
+    }
+}
+
+carregarDados();
+
+setInterval(carregarDados, 10000);
+
+</script>
+
+</body>
+</html>
