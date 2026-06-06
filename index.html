@@ -170,8 +170,10 @@ async function carregarDados(){
 
     try{
 
-        // GET sem header Authorization para evitar preflight CORS
-        const resposta = await fetch(API);
+        // TOKEN ERRADO para demonstrar acesso negado
+        const resposta = await fetch(API, {
+            headers: { authorization: "tokenerrado" }
+        });
 
         const dados = await resposta.json();
 
@@ -182,7 +184,7 @@ async function carregarDados(){
 
         if(dados.length > 0){
 
-            const ultima = dados[0]; // primeiro da lista é o mais recente (ORDER BY id DESC)
+            const ultima = dados[0];
 
             document.getElementById("ultimaTemp").innerText =
                 ultima.temperatura + " °C";
