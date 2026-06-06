@@ -164,18 +164,14 @@ footer{
 
 <script>
 
-const API =
-"https://19ig21u0cj.execute-api.us-east-1.amazonaws.com/prod/temperatura";
+const API = "https://19ig21u0cj.execute-api.us-east-1.amazonaws.com/prod/temperatura";
 
 async function carregarDados(){
 
     try{
 
-        const resposta = await fetch(API,{
-            headers:{
-                authorization:"deuzimara"
-            }
-        });
+        // GET sem header Authorization para evitar preflight CORS
+        const resposta = await fetch(API);
 
         const dados = await resposta.json();
 
@@ -186,7 +182,7 @@ async function carregarDados(){
 
         if(dados.length > 0){
 
-            const ultima = dados[dados.length - 1];
+            const ultima = dados[0]; // primeiro da lista é o mais recente (ORDER BY id DESC)
 
             document.getElementById("ultimaTemp").innerText =
                 ultima.temperatura + " °C";
