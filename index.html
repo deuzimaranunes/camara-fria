@@ -25,9 +25,65 @@ header{
     box-shadow:0 2px 8px rgba(0,0,0,.2);
 }
 
-header h1{
-    margin-bottom:5px;
+header h1{ margin-bottom:5px; }
+
+/* LOGIN */
+#telaLogin{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:80vh;
 }
+
+.loginBox{
+    background:white;
+    padding:40px;
+    border-radius:15px;
+    box-shadow:0 4px 15px rgba(0,0,0,.1);
+    width:100%;
+    max-width:400px;
+    text-align:center;
+}
+
+.loginBox h2{
+    color:#0057b8;
+    margin-bottom:20px;
+}
+
+.loginBox input{
+    width:100%;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
+    margin-bottom:15px;
+    font-size:16px;
+}
+
+.loginBox button{
+    width:100%;
+    background:#0057b8;
+    color:white;
+    border:none;
+    padding:12px;
+    border-radius:8px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.loginBox button:hover{ opacity:0.9; }
+
+.erroLogin{
+    color:red;
+    margin-top:10px;
+    font-weight:bold;
+    display:none;
+}
+
+/* DASHBOARD */
+#tela Dashboard{ display:none; }
+
+#telaDashboard{ display:none; }
 
 .container{
     width:90%;
@@ -49,29 +105,19 @@ header h1{
     box-shadow:0 4px 10px rgba(0,0,0,.08);
 }
 
-.card h3{
-    color:#0057b8;
-    margin-bottom:10px;
-}
+.card h3{ color:#0057b8; margin-bottom:10px; }
 
-.valor{
-    font-size:32px;
-    font-weight:bold;
-}
-
-.normal{
-    color:green;
-}
-
-.alerta{
-    color:red;
-}
+.valor{ font-size:32px; font-weight:bold; }
+.normal{ color:green; }
+.alerta{ color:red; }
 
 .acoes{
     margin-bottom:20px;
+    display:flex;
+    gap:10px;
 }
 
-button{
+.btnAtualizar{
     background:#ffc107;
     border:none;
     padding:12px 20px;
@@ -80,8 +126,14 @@ button{
     font-weight:bold;
 }
 
-button:hover{
-    opacity:0.9;
+.btnSair{
+    background:#dc3545;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
 }
 
 table{
@@ -119,43 +171,53 @@ footer{
     <p>Controle de Temperatura em Tempo Real</p>
 </header>
 
-<div class="container">
+<!-- TELA DE LOGIN -->
+<div id="telaLogin">
+    <div class="loginBox">
+        <h2>🔐 Acesso ao Sistema</h2>
+        <p style="color:#666; margin-bottom:20px;">Insira o token de autorização</p>
+        <input type="password" id="inputToken" placeholder="Token de acesso" />
+        <button onclick="fazerLogin()">Entrar</button>
+        <div class="erroLogin" id="erroLogin">❌ Token inválido! Acesso negado.</div>
+    </div>
+</div>
 
-    <div class="cards">
+<!-- TELA DO DASHBOARD -->
+<div id="telaDashboard">
+    <div class="container">
 
-        <div class="card">
-            <h3>Última Temperatura</h3>
-            <div class="valor" id="ultimaTemp">-- °C</div>
+        <div class="cards">
+            <div class="card">
+                <h3>Última Temperatura</h3>
+                <div class="valor" id="ultimaTemp">-- °C</div>
+            </div>
+            <div class="card">
+                <h3>Total de Leituras</h3>
+                <div class="valor" id="totalLeituras">0</div>
+            </div>
+            <div class="card">
+                <h3>Status</h3>
+                <div class="valor" id="statusCamara">--</div>
+            </div>
         </div>
 
-        <div class="card">
-            <h3>Total de Leituras</h3>
-            <div class="valor" id="totalLeituras">0</div>
+        <div class="acoes">
+            <button class="btnAtualizar" onclick="carregarDados()">Atualizar Dados</button>
+            <button class="btnSair" onclick="sair()">Sair</button>
         </div>
 
-        <div class="card">
-            <h3>Status</h3>
-            <div class="valor" id="statusCamara">--</div>
-        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Temperatura (°C)</th>
+                    <th>Data/Hora</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaDados"></tbody>
+        </table>
 
     </div>
-
-    <div class="acoes">
-        <button onclick="carregarDados()">Atualizar Dados</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Temperatura (°C)</th>
-                <th>Data/Hora</th>
-            </tr>
-        </thead>
-        <tbody id="tabelaDados">
-        </tbody>
-    </table>
-
 </div>
 
 <footer>
@@ -166,42 +228,64 @@ footer{
 
 const API = "https://19ig21u0cj.execute-api.us-east-1.amazonaws.com/prod/temperatura";
 
-async function carregarDados(){
+let tokenAtual = "";
+let intervalo = null;
 
+async function fazerLogin(){
+    const token = document.getElementById("inputToken").value.trim();
+
+    // Testa o token fazendo uma requisição real para a API
     try{
-
-        // TOKEN ERRADO para demonstrar acesso negado
         const resposta = await fetch(API, {
-            headers: { authorization: "tokenerrado" }
+            headers: { authorization: token }
+        });
+
+        if(resposta.status === 200){
+            // Token correto
+            tokenAtual = token;
+            document.getElementById("telaLogin").style.display = "none";
+            document.getElementById("telaDashboard").style.display = "block";
+            document.getElementById("erroLogin").style.display = "none";
+            carregarDados();
+            intervalo = setInterval(carregarDados, 10000);
+
+        } else {
+            // Token errado — mostra erro
+            document.getElementById("erroLogin").style.display = "block";
+        }
+
+    } catch(e) {
+        document.getElementById("erroLogin").style.display = "block";
+    }
+}
+
+async function carregarDados(){
+    try{
+        const resposta = await fetch(API, {
+            headers: { authorization: tokenAtual }
         });
 
         const dados = await resposta.json();
-
         const tabela = document.getElementById("tabelaDados");
         tabela.innerHTML = "";
 
         document.getElementById("totalLeituras").innerText = dados.length;
 
         if(dados.length > 0){
-
             const ultima = dados[0];
-
-            document.getElementById("ultimaTemp").innerText =
-                ultima.temperatura + " °C";
+            document.getElementById("ultimaTemp").innerText = ultima.temperatura + " °C";
 
             const status = document.getElementById("statusCamara");
-
             if(ultima.temperatura <= 8){
                 status.innerText = "NORMAL";
                 status.className = "valor normal";
-            }else{
+            } else {
                 status.innerText = "ALERTA";
                 status.className = "valor alerta";
             }
         }
 
         dados.forEach(item => {
-
             tabela.innerHTML += `
                 <tr>
                     <td>${item.id}</td>
@@ -211,15 +295,23 @@ async function carregarDados(){
             `;
         });
 
-    }catch(erro){
-        alert("Erro ao carregar dados da API");
+    } catch(erro){
         console.error(erro);
     }
 }
 
-carregarDados();
+function sair(){
+    tokenAtual = "";
+    clearInterval(intervalo);
+    document.getElementById("telaDashboard").style.display = "none";
+    document.getElementById("telaLogin").style.display = "flex";
+    document.getElementById("inputToken").value = "";
+}
 
-setInterval(carregarDados, 10000);
+// Permite pressionar Enter no campo de token
+document.getElementById("inputToken").addEventListener("keypress", function(e){
+    if(e.key === "Enter") fazerLogin();
+});
 
 </script>
 
